@@ -1,5 +1,7 @@
-use sqlx::PgPool;
-use zero2prod::configuration::get_configuration;
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use zero2prod::configuration::{get_configuration, DatabaseSettings};
+
+use uuid::Uuid;
 use zero2prod::startup::run;
 
 use std::net::TcpListener;
@@ -97,13 +99,12 @@ async fn spawn_app() -> TestApp {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to assign a random port");
 
     let port = listener.local_addr().unwrap().port();
-    let configuration = get_configuration().expect("Failed to read configuration.");
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
 
-    let connection = PgPool::connect(&configuration.database.connection_string())
-        .await
-        .expect("Failed to connect to Postgres");
+    configuration.database.database_name = Uuid::new_v4().to_string();
+    let connection_pool = configure_database(&configuration.database).await;
 
-    let server = run(listener, connection.clone()).expect("Failed to bind address");
+    let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
     // Launch the server as a background task
     // tokio::spawn returns a handle to the spawned future,
     // but we have no use for it here, hence the non-binding let
@@ -111,6 +112,24 @@ async fn spawn_app() -> TestApp {
 
     TestApp {
         address: format!("http://127.0.0.1:{}", port),
-        db_pool: connection,
+        db_pool: connection_pool,
     }
+}
+
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool { // Create database
+let mut connection = PgConnection::connect(
+            &config.connection_string_without_db()
+        )
+.await
+        .expect("Failed to connect to Postgres");
+    connection
+.execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str()) .await
+.expect("Failed to create database.");
+    // Migrate database
+let connection_pool = PgPool::connect(&config.connection_string()) .await
+.expect("Failed to connect to Postgres."); sqlx::migrate!("./migrations")
+        .run(&connection_pool)
+        .await
+        .expect("Failed to migrate the database");
+    connection_pool
 }
