@@ -3,5 +3,17 @@
     "activityBar.background": "#282A4E",
     "titleBar.activeBackground": "#393B6D",
     "titleBar.activeForeground": "#FBFBFD"
-  }
+  },
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "local",
+      "database": "newsletter",
+      "username": "postgres",
+      "password": "password"
+    }
+  ]
 }
