@@ -20,7 +20,12 @@ Measure test coverage
 `cargo tarpaulin --ignore-tests --output-dir coverage --target-dir coverage`
 
 Driving the subscription API
-`curl -i -X POST -d 'email=thomas_mann@hotmail.com&name=Tom' http://127.0.0.1:8000/subscribe`
+`curl -i -X POST -d 'email=thomas_mann@hotmail.com&name=Tom' http://127.0.0.1:8000/subscriptions`
 
 Check the subscriptions table
 `psql -d newsletter -h 127.0.0.1 -U postgres --password -c "select * from subscriptions"`
+
+# cargo-udeps requires the nightly compiler.
+# We add +nightly to our cargo invocation
+# to tell cargo explicitly what toolchain we want to use.
+`cargo +nightly udeps`
