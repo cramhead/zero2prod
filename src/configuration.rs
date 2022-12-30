@@ -1,5 +1,5 @@
-use config::{ConfigError};
-use secrecy::{Secret, ExposeSecret};
+use config::ConfigError;
+use secrecy::{ExposeSecret, Secret};
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -17,14 +17,16 @@ pub struct DatabaseSettings {
 
 pub fn get_configuration() -> Result<Settings, ConfigError> {
     // Initialise our configuration reader
-    let settings = config::Config
-        ::builder()
+    let settings = config::Config::builder()
         // Add configuration values from a file named `configuration.yaml`.
-        .add_source(config::File::new("configuration.yaml", config::FileFormat::Yaml))
+        .add_source(config::File::new(
+            "configuration.yaml",
+            config::FileFormat::Yaml,
+        ))
         .build()?;
 
     // Try to convert the configuration values it read into // our Settings type settings.try_deserialize::<Settings>()
-    settings.try_deserialize::<Settings>() 
+    settings.try_deserialize::<Settings>()
 }
 
 impl DatabaseSettings {
@@ -39,13 +41,13 @@ impl DatabaseSettings {
         ))
     }
 
-    pub fn connection_string_without_db(&self) -> Secret<String> { 
+    pub fn connection_string_without_db(&self) -> Secret<String> {
         Secret::new(format!(
             "postgres://{}:{}@{}:{}",
-            self.username, 
-            self.password.expose_secret(), 
-            self.host, 
+            self.username,
+            self.password.expose_secret(),
+            self.host,
             self.port
         ))
-}
+    }
 }
